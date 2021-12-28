@@ -1,6 +1,7 @@
 import socket
 import struct
-
+from msvcrt import getch
+import sys
 PORT = 13117
 MAGIC_COOKIE = 0xabcddcba
 MESSAGE_TYPE = 0x2
@@ -52,8 +53,8 @@ class Client:
             print(welcome_mess)
             math_mess = self.client_tcp_socket.recv(MESSAGE_SIZE).decode()  # mathematical question
             print(math_mess)
-            answer = input("answer: ")
-            self.client_tcp_socket.send(answer.encode('UTF-8'))
+            answer = sys.stdin.read(1)
+            self.client_tcp_socket.sendall(answer.encode())
             print(self.client_tcp_socket.recv(MESSAGE_SIZE).decode())  # end of game message
             print("Server disconnected, listening for offer requests...")
             self.looking_for_a_server()

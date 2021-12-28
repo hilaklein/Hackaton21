@@ -1,5 +1,6 @@
 import socket
 import struct
+import threading
 from threading import *
 import random
 import time
@@ -29,6 +30,9 @@ class Server:
         self.server_udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)  # enable broatcat
         self.random_nums = self.generate_math_question()
         self.numConnected = 0
+        self.is_answered = False
+        self.winner = ""
+        self.lock = threading.Lock()
 
     def Waiting_for_clients(self):
 
@@ -40,6 +44,7 @@ class Server:
             offer_thread.start()
             recieve_thread = Thread(target=self.recieve_clients(),daemon=True)
             recieve_thread.start()
+
             # while True:
             #     (conn, (dest_ip, dest_port)) = self.server_tcp_socket.accept()
             #     recieve_client = Thread(target=self.recieve_clients,args=(conn),daemon=True)
@@ -65,8 +70,14 @@ class Server:
         a = random.randint(0,9)
         b = random.randint(0,(9-a))
         return [a,b]
-    def end_game(self):
-        print ("game end")
+    def end_game(self,team,conn):
+        if self.is_answered:
+            return
+        else :
+            self.is_answered = True
+            self.winner = "the winner is " + team
+
+
     def broadcast_offers(self):
         while is2connected:
                 self.server_udp_socket.sendto((struct.pack('IBH', MAGIC_COOKIE, MESSAGE_TYPE, my_tcp_port)),
@@ -78,7 +89,7 @@ class Server:
             (conn, (dest_ip, dest_port)) = self.server_tcp_socket.accept()
             data = conn.recv(MESSAGE_SIZE).decode()  # get team name
             self.team_names.append(data)
-            game_thread = Thread(target=self.game_mode, daemon=True, args=[conn])
+            game_thread = Thread(target=self.game_mode, daemon=True, args=[conn,data])
             self.games_threads.append(game_thread)
             self.numConnected = self.numConnected + 1
             if self.numConnected == 2:
@@ -89,15 +100,22 @@ class Server:
                     t.join(10)
                 break
 
-    def game_mode(self,conn):
+    def game_mode(self,conn,team):
         welcome_message = "Welcome to Quick Maths\n"+ "Player 1: "+ self.team_names[0]+ "Player 2: "+self.team_names[1]+ "\n=="
         answer = self.random_nums[0] + self.random_nums[1]
         math_question_message = "How much is "+ str(self.random_nums[0])+ "+"+ str(self.random_nums[1])
         conn.send(welcome_message.encode())
         conn.send(math_question_message.encode())
         client_answer = conn.recv(MESSAGE_SIZE).decode()  # get answer
-        if client_answer == answer:
-            self.end_game()
+        self.lock.acquire()
+        if int(client_answer) == answer:
+            self.end_game(team,conn)
+        conn.send(self.winner.encode())
+        self.lock.release()
+        if self.is_answered:
+            conn.shutdown(socket.SHUT_RD)
+            conn.close()
+
 
 
 if __name__ == '__main__':
