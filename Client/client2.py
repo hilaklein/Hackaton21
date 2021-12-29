@@ -1,5 +1,9 @@
+import msvcrt
 import socket
 import struct
+import time
+from multiprocessing import Process
+from threading import *
 from msvcrt import getch
 import sys
 import select
@@ -16,7 +20,7 @@ class Client:
         self.reset_udp()
         self.reset_tcp()
         self.local_ip = socket.gethostbyname(socket.gethostname())
-        self.team_name = "secClient"
+        self.team_name = "fClient"
 
     def reset_udp(self):
         self.client_udp_socket = None
@@ -26,6 +30,7 @@ class Client:
         self.client_udp_socket.bind(('', PORT))
 
     def reset_tcp(self):
+        print("Server disconnected, listening for offer requests...")
         self.client_tcp_socket = None
         self.client_tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # tcp socket
         self.client_tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # enable reuse
@@ -57,30 +62,39 @@ class Client:
             print (ex)
 
     def game_mode(self, addr):
-        while 1:
+        # while True:
             try:
                 welcome_mess = self.client_tcp_socket.recv(MESSAGE_SIZE).decode()  # get welcoming to game message from server
                 print(welcome_mess)
                 math_mess = self.client_tcp_socket.recv(MESSAGE_SIZE).decode()  # mathematical question
                 print(math_mess)
+                read_ans_thread = Thread(target=self.read_ans,daemon=True)
+                read_ans_thread.start()
+                time.sleep(10)
                 self.read_game_stat()
+                # self.reset_udp()
+                self.reset_tcp()
+                time.sleep(2)
+                self.looking_for_a_server()
+
 
             except Exception as ex:
                pass
 
-        self.looking_for_a_server()
-
+    def read_ans(self):
+        print("wait for ans")
+        try:
+            answer = sys.stdin.read(1)
+            self.client_tcp_socket.send(answer.encode())
+        except Exception as ex:
+            pass
 
     def read_game_stat(self):
-        readOrWrite, _, _ = select.select([sys.stdin, self.client_tcp_socket], [], [])
-        for r in readOrWrite:
-            if r is self.client_tcp_socket:
-                print(self.client_tcp_socket.recv(MESSAGE_SIZE).decode())  # end of game message
-                print("Server disconnected, listening for offer requests...")
-            else:
-                answer = sys.stdin.read(1)
-                self.client_tcp_socket.send(answer.encode())
-                self.read_game_stat()
+        print("client here")
+        end_game_mess = self.client_tcp_socket.recv(MESSAGE_SIZE)
+        print("gggg")
+        print(end_game_mess.decode())
+
 if __name__ == '__main__':
     cleint1 = Client()
     cleint1.looking_for_a_server()
