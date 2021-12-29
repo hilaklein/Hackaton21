@@ -16,7 +16,7 @@ class Client:
         self.reset_udp()
         self.reset_tcp()
         self.local_ip = socket.gethostbyname(socket.gethostname())
-        self.team_name = "firstClient"
+        self.team_name = "secClient"
 
     def reset_udp(self):
         self.client_udp_socket = None
