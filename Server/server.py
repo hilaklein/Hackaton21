@@ -3,13 +3,15 @@ import struct
 from threading import *
 import random
 import time
+import scapy.arch
 
 UDP_DEST_PORT = 13117
 MAGIC_COOKIE = 0xabcddcba
 MESSAGE_TYPE = 0x2
 MESSAGE_SIZE = 2048
-my_tcp_port = 7000
-dest_tcp_port = 5000
+my_tcp_port = 2022
+# dest_tcp_port = 5000
+UDP_IP = '127.0.0.1'
 
 
 
@@ -19,8 +21,8 @@ class Server:
         self.server_tcp_socket.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
         self.team_names = []
         self.games_threads = []
-        self.local_udp_ip = '255.255.255.255'
-        # self.local_tcp_ip = scapy.arch.get_if_addr("eth1")
+        self.local_udp_ip = UDP_IP
+        self.local_tcp_ip = scapy.arch.get_if_addr("eth1")
         self.server_udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # udp socket
         self.server_udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # enable reuse address
         self.server_udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)  # enable broatcat

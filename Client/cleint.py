@@ -6,12 +6,15 @@ from multiprocessing import Process
 from threading import *
 from msvcrt import getch
 import sys
-import select
+import scapy.arch
+
+from Server.server import UDP_IP
 
 PORT = 13117
 MAGIC_COOKIE = 0xabcddcba
 MESSAGE_TYPE = 0x2
 MESSAGE_SIZE = 1024
+UDP_IP = '127.0.0.1'
 
 
 class Client:
@@ -19,15 +22,15 @@ class Client:
         self.client_tcp_socket = None
         self.reset_udp()
         self.reset_tcp()
-        # self.local_ip = socket.gethostbyname(socket.gethostname())
         self.team_name = "hereForThePizza"
+        self.local_tcp_ip = scapy.arch.get_if_addr("eth1")
 
     def reset_udp(self):
         self.client_udp_socket = None
         self.client_udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)  # udp socket
         self.client_udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)  # enable broatcat
         self.client_udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # enable reuse address
-        self.client_udp_socket.bind(('', PORT))
+        self.client_udp_socket.bind((UDP_IP, PORT))
 
     def reset_tcp(self):
         print("Server disconnected, listening for offer requests...")
