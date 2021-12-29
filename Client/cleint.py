@@ -30,7 +30,7 @@ class Client:
         self.client_udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)  # udp socket
         self.client_udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)  # enable broatcat
         self.client_udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # enable reuse address
-        self.client_udp_socket.bind((UDP_IP, PORT))
+        self.client_udp_socket.bind(('', PORT))
 
     def reset_tcp(self):
         print("Server disconnected, listening for offer requests...")
