@@ -39,24 +39,18 @@ class Server:
         self.server_tcp_socket.bind(('', my_tcp_port))
 
     def tear_down(self):
-        self.is2connected = False
+        self.is2connected = True
         self.winner = ""
         self.random_nums = self.generate_math_question()
         self.team_names =[]
         self.games_threads = []
         self.numConnected = 0
         self.is_answered = False
-        # self.server_udp_socket = None
-        # self.server_udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # udp socket
-        # self.server_udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # enable reuse address
-        # self.server_udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)  # enable broatcat
-        # self.server_udp_socket.bind(('',UDP_DEST_PORT))
+        self.server_tcp_socket.close()
         self.server_tcp_socket = None
         self.server_tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # tcp socket
         self.server_tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_tcp_socket.bind(('', my_tcp_port))
-        # self.offer_thread = None
-        # self.recieve_thread = None
 
     def Waiting_for_clients(self):
 
@@ -104,10 +98,13 @@ class Server:
                 #     t.join()
                 if self.is_answered == False:
                     self.end_game()
-                self.team_names[0][1].send(self.winning_mess.encode())
-                self.team_names[1][1].send(self.winning_mess.encode())
-                self.team_names[0][1].close()
-                self.team_names[1][1].close()
+                try:
+                    self.team_names[0][1].send(self.winning_mess.encode())
+                    self.team_names[1][1].send(self.winning_mess.encode())
+                    self.team_names[0][1].close()
+                    self.team_names[1][1].close()
+                except Exception as ex:
+                    pass
 
                 print("Game over, sending out offer requests...")
                 break
@@ -131,23 +128,20 @@ class Server:
         try:
             client_answer = conn.recv(MESSAGE_SIZE).decode()
             self.client_answer = client_answer
-            print(client_answer)  # get answer
         except Exception as ex:
             pass
         self.answering_lock.acquire()
         if(self.is_answered == False):
 
             if int(self.client_answer) == answer: #i won
-                print("win")
                 self.winner = team
                 self.is_answered = True
             else:
-                print("bad")
                 self.is_answered = True
-                if(self.team_names[0] == team): #i lost - technical winning for other player
-                    self.winner = self.team_names[1]
+                if(self.team_names[0][0] == team): #i lost - technical winning for other player
+                    self.winner = self.team_names[1][0]
                 else:
-                    self.winner = self.team_names[0]
+                    self.winner = self.team_names[0][0]
             self.winning_mess = "Game Over!"+"The correct answer was " + str(answer) + "!!!\n"+"Congratulations to the winner: " + self.winner
 
             self.answering_lock.release()

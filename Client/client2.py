@@ -14,13 +14,13 @@ MESSAGE_TYPE = 0x2
 MESSAGE_SIZE = 1024
 
 
-team_name = "hereForThePizza"
 class Client:
     def __init__(self):
+        self.client_tcp_socket = None
         self.reset_udp()
         self.reset_tcp()
-        self.local_ip = socket.gethostbyname(socket.gethostname())
-        self.team_name = "fClient"
+        # self.local_ip = socket.gethostbyname(socket.gethostname())
+        self.team_name = "hereForThePizza"
 
     def reset_udp(self):
         self.client_udp_socket = None
@@ -35,9 +35,11 @@ class Client:
         self.client_tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # tcp socket
         self.client_tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # enable reuse
     def looking_for_a_server(self):  # waiting for offers
-        try:
 
-            print("Client started, listening for offer requests...")
+
+        print("Client started, listening for offer requests...")
+        # while True:
+        try:
             message, addr = self.client_udp_socket.recvfrom(MESSAGE_SIZE)
             magic_cookie, message_type, port = struct.unpack('IBH', message)
             if (magic_cookie == MAGIC_COOKIE) and (message_type == MESSAGE_TYPE):
@@ -47,9 +49,7 @@ class Client:
                 print("The message is not in the right format")
 
         except Exception as ex:
-            print (ex)
-            print (ex.args)
-            print (ex.with_traceback())
+            pass
 
     def connecting_to_server(self, ip, port):
         try:
@@ -68,21 +68,25 @@ class Client:
                 print(welcome_mess)
                 math_mess = self.client_tcp_socket.recv(MESSAGE_SIZE).decode()  # mathematical question
                 print(math_mess)
-                read_ans_thread = Thread(target=self.read_ans,daemon=True)
-                read_ans_thread.start()
-                time.sleep(10)
-                self.read_game_stat()
-                # self.reset_udp()
-                self.reset_tcp()
-                time.sleep(2)
-                self.looking_for_a_server()
+
+                begin_game = Thread(target=self.begin_game,daemon=True)
+                begin_game.start()
+                begin_game.join()
 
 
             except Exception as ex:
                pass
-
+    def begin_game(self):
+        read_ans_thread = Thread(target=self.read_ans, daemon=True)
+        read_ans_thread.start()
+        time.sleep(10)
+        self.read_game_stat()
+        # self.reset_udp()
+        self.client_tcp_socket.close()
+        self.reset_tcp()
+        time.sleep(2)
+        self.looking_for_a_server()
     def read_ans(self):
-        print("wait for ans")
         try:
             answer = sys.stdin.read(1)
             self.client_tcp_socket.send(answer.encode())
@@ -90,10 +94,11 @@ class Client:
             pass
 
     def read_game_stat(self):
-        print("client here")
-        end_game_mess = self.client_tcp_socket.recv(MESSAGE_SIZE)
-        print("gggg")
-        print(end_game_mess.decode())
+        try:
+            end_game_mess = self.client_tcp_socket.recv(MESSAGE_SIZE)
+            print(end_game_mess.decode())
+        except Exception as ex:
+            pass
 
 if __name__ == '__main__':
     cleint1 = Client()
